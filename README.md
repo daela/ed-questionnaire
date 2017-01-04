@@ -4,25 +4,25 @@ ED Questionnaire
 Introduction
 ------------
 
-ED Questionnaire is a django questionnaire app which is easily customised
+ED Questionnaire is a Django questionnaire app which is easily customizable
 and includes advanced dependency support using boolean expressions.
 
-It allows an administrator to create and edit questionnaires in the django
+It allows an administrator to create and edit questionnaires in the Django
 admin interface, with support for multiple languages.
 
 History
 -------
 
-The questionnaire app was originally developed by [Seantis](https://github.com/seantis), itself derived from [rmt](https://github.com/rmt). We picked up the project because we had been using it and the Seantis version had entered a steady state of development. There are several feature changes we wanted & decided to head up the maintenance ourselves.
+The questionnaire app was originally developed by [Seantis](https://github.com/seantis), itself derived from [rmt](https://github.com/rmt). We picked up the project because we had been using it and the Seantis version had entered a steady state of development. There are several feature changes we wanted and decided to head up the maintenance ourselves.
 
 The old versions are tagged as follows:
 
  * tag 1.0 - state of last commit by the original developer (rmt)
  * tag 1.1 - contains merged changes by other forks improving the original
- * tag 2.0 - original updated trunk from Seantis version.
- * tag 2.5 - contains the original Seantis version & all PRs merged in as of 12/09/15. It's considered to be the backwards compatible version of the repository.
+ * tag 2.0 - original updated trunk from Seantis version
+ * tag 2.5 - contains the original Seantis version and all PRs merged in as of 12/09/15. It's considered to be the backwards compatible version of the repository.
 
-The new version is the current trunk and is dubbed v3.0. v3.0 should be considered a new project & thus will contain backwards incompatible changes. When possible, we'll try and backport fixes to the v2.x branches, but it will not be a priority.
+The new version is the current trunk and is dubbed v3.0. It should be considered a new project and thus will contain backwards incompatible changes. When possible, we'll try and backport fixes to the v2.x branches, but it will not be a priority.
 
 About this Manual
 -----------------
@@ -31,7 +31,7 @@ ED Questionnaire is not a very well documented app so far to say the least. This
 
 What it does cover is the following:
 
- * **Integration** talks lays out the steps needed to create a new Django page together with the questionnaire. The same steps can be used to integrate the questionnaire into an existing site (though you would be entering unpaved ways).
+ * **Integration** lays out the steps needed to create a new Django app together with the questionnaire. The same steps can be used to integrate the questionnaire into an existing site (though you would be entering unpaved ways).
  * **Concepts** talks about the data model and the design of the application.
  * **Migration** explains how a questionnaire defined with 1.0 can be used in 2.0.
  * **2.0 Postmortem** talks about some experiences made during the development of 2.0.
@@ -80,40 +80,46 @@ The next step is to install the questionnaire.
 
     python setup.py install
 
-If you are working with ed-questionnaire from your own fork you may want to use `python setup.py develop` instead, which will save you from running `python setup.py install` every time the questionnaire changes
+If you are working with ed-questionnaire from your own fork you may want to use `python setup.py develop` instead, which will save you from running `python setup.py install` every time the questionnaire changes.
 
-Next up we'll have a look at configuring your basic questionnaire.
+Now let's configure your basic questionnaire.
 
-First, you want to setup the languages used in your questionnaire, by opening settings.py in your site's folder (the one with the subfoler apps/)
+First, you want to setup the languages used in your questionnaire. Open up your `mysite` folder in your favorite text editor.
 
-Open settings.py and add following lines, representing your languages of choice:
+Open `mysite/mysite/settings.py` and add following lines, representing your languages of choice:
 
     LANGUAGES = (
         ('en', 'English'),
         ('de', 'Deutsch')
     )
 
-At the top of settings.py you should at this point add
+At the top of `settings.py` you should at this point add:
 
     import os.path
 
-We will use that below for the setup of the folders
+We will use that below for the setup of the folders.
 
-In the same file add the questionnaire static directory to your STATICFILES_DIRS
+In the same file add the questionnaire static directory to your STATICFILES_DIRS:
 
-    os.path.abspath('./apps/ed-questionnaire/questionnaire/static/')
+    STATICFILES_DIRS = (
+    os.path.abspath('./apps/ed-questionnaire/questionnaire/static/'),
+    )
 
-Also add the locale and request cache middleware to MIDDLEWARE_CLASSES
+Also add the locale and request cache middleware to MIDDLEWARE_CLASSES:
 
     'django.middleware.locale.LocaleMiddleware',
     'questionnaire.request_cache.RequestCacheMiddleware',
 
-Add the questionnaire template dir as well as your own to TEMPLATE_DIRS
+If you are using Django 1.7 you will need to comment out the following line, like so:
+    # 'django.middleware.security.SecurityMiddleware',
+otherwise you will get an error when trying to start the server.
+
+Add the questionnaire template directory as well as your own to TEMPLATE_DIRS:
 
     os.path.abspath('./apps/ed-questionnaire/questionnaire/templates'),
     os.path.abspath('./templates'),
 
-And finally, add transmeta, questionnaire to your INSTALLED_APPS
+And finally, add `transmeta`, `questionnaire` to your INSTALLED_APPS:
 
     'django.contrib.sites',
     'transmeta',
@@ -122,11 +128,11 @@ And finally, add transmeta, questionnaire to your INSTALLED_APPS
 
 To get the "sites" framework working you also need to add the following setting:
 
-    SITE = 1
+    SITE_ID = 1
 
-Next up we want to edit the urls.py of your project to hookup the questionnaire views with your site's url configuration.
+Next up we want to edit the `urls.py` file of your project to link the questionnaire views to your site's url configuration.
 
-For an empty site with enabled admin interface you should end up with something like this:
+For an empty site with enabled admin interface you add:
 
     from django.conf.urls import patterns, include, url
 
@@ -146,15 +152,18 @@ For an empty site with enabled admin interface you should end up with something 
         url(r'^setlang/$', 'questionnaire.views.set_language'),
     )
 
-For the questionnaire itself it is only necessary to have the urls below `# questionnaire urls
+Having done that we can initialize our database. (For this to work you must have setup your DATABASES in `settings.py`.). First, in your CLI navigate back to the `mysite` folder:
 
-Having done that we can initialize our database. For this to work you must have setup your DATABASES in settings.py
+    cd ../..
+
+The check that you are in the proper folder, type `ls`: if you can see `manage.py` in your list of files, you are good. Otherwise, find your way to the folder that contains that file. Then type:
 
     python manage.py syncdb
+    python manage.py migrate
 
-The questionnaire expectes a base.html template to be there, with certain stylesheets and blocks inside. Have a look at `./apps/ed-questionnaire/example/templates/base.html`
+The questionnaire expects a `base.html` template to be there, with certain stylesheets and blocks inside. Have a look at `./apps/ed-questionnaire/example/templates/base.html`.
 
-For now you might want to just copy the base.html to your own template folder.
+For now you might want to just copy the `base.html` to your own template folder.
 
     mkdir templates
     cd templates
@@ -162,20 +171,20 @@ For now you might want to just copy the base.html to your own template folder.
 
 Congratulations, you have setup the basics of the questionnaire! At this point this site doesn't really do anything, as there are no questionnaires defined.
 
-To see an example questionnaire you can do the following (unfortunately, this will only work if you have both English and German defined as Languages in settings.py)
+To see an example questionnaire you can do the following (Note: this will only work if you have both English and German defined as Languages in `settings.py`):
 
     python manage.py loaddata ./apps/ed-questionnaire/example/fixtures/initial_data.yaml
 
-You may then start your development server
+You may then start your development server:
 
     python manage.py runserver
 
-And navigate your browser to `localhost:8000`
+And navigate to [localhost:8000](http://localhost:8000/).
 
 Concepts
 --------
 
-The ED Questionnaire sports the following tables, described in detail below.
+The ED Questionnaire has the following tables, described in detail below.
 
  * Subject
  * RunInfo
@@ -218,7 +227,7 @@ The runinfo history is used to refer to a set of answers.
 
 ### Question
 
-A question is anything you want to ask a subject. Since this is usually not limited to yes or no type questions there are a number of different types you can use:
+A question is anything you want to ask a subject. There are a number of different types you can use:
 
  * **choice-yesno** - Yes or No
  * **choice-yesnocomment** - Yes or No with a chance to comment on the answer
@@ -230,19 +239,19 @@ A question is anything you want to ask a subject. Since this is usually not limi
  * **choice-multiple** - A list of choices with multiple answers
  * **choice-multiple-freeform** - Multiple Answers with multiple user defined answers
  * **range** - A range of number from which one number can be chosen
- * **number** - a number
+ * **number** - A number
  * **timeperiod** - A timeperiod
- * **custom** - custom question using a custom template
+ * **custom** - Custom question using a custom template
  * **comment** - Not a question, but only a comment displayed to the user
- * **sameas** - same type as some other question
+ * **sameas** - Same type as another question
 
-*Some of these types, depend on checks or choices. The number question for instance can be controlled by setting the checks to something like "range=1-100 step=1". The range question may also use the before-mentioned checks and also "unit=%". Other questions like the choice-multiple-freeform need a "extracount=10" if ten extra options should be given to the user.
+*Some of these types, depend on checks or choices. The number question for instance can be controlled by setting the checks to something like `range=1-100 step=1`. The range question may also use the before-mentioned checks and also `unit=%`. Other questions like the choice-multiple-freeform need a `extracount=10` if ten extra options should be given to the user.
 
 I would love to go into all the details here but time I have not so I my only choice is to kindly refer you to the qprocessor submodule which handles all the question types.*
 
 Next up is the question number. The question number defines the order of questions alphanumerically as long as a number of questions are shown on the same page. The number is also used to refer to the question.
 
-The text of the question is what the user will be asked. There can be one text for each language defined in the settings.py file.
+The text of the question is what the user will be asked. There can be one text for each language defined in the `settings.py` file.
 
 The extra is an additional piece of information shown to the user. As of yet not all questions support this, but most do.
 
@@ -266,7 +275,7 @@ A choice is a possible value for a multiple choice question.
 
 ### QuestionSet
 
-A bunch of questions together form a questionset. A questionset is ultimately single page of questions. Questions in the same questionset are shown on the same page.
+A number of questions together form a questionset. A questionset is ultimately single page of questions. Questions in the same questionset are shown on the same page.
 
 QuestionSets also have checks, with the same options as Questions. There's only one difference, **required** and **requiredif** don't do anything.
 
@@ -278,7 +287,7 @@ Contains the answer to a question. The value of the answer is stored as JSON.
 
 ### Questionnaire 
 
-A questionnaire is a bunch of questionsets together.
+A questionnaire is a group of questionsets together.
 
 
 Migration of 1.x to 2.0
@@ -288,11 +297,11 @@ Migration of 1.x to 2.0
 
 As Django per default does not provide a way to migrate database schemas, we pretty much make use of the bulldozer way of migrating, by exporting the data from one database and import it into a newly created one.
 
-From you existing 1.x site do
+From you existing 1.x site do:
 
     python manage.py dumpdata >> export.yaml
 
-Copy your file to your new site and in your new site, create your empty database
+Copy your file to your new site and in your new site, create your empty database:
 
     python manage.py syncdb
 
@@ -305,7 +314,7 @@ This of course covers only the data migration. How to migrate your custom tailor
 2.0 Postmortem
 --------------
 
-2.0 was the result of the work we put into seantis questionnaire for our second project with it. We did this project without the help of questionnaire's creator and were pretty much on our own during that time.
+2.0 was the result of the work we put into Seantis questionnaire for our second project with it. We did this project without the help of the questionnaire's creator and were pretty much on our own during that time.
 
 Here's what we think we learned:
 
@@ -321,13 +330,14 @@ We used a fair amount of checks in both questionset and questions to control a c
 
 Though this approach certainly works fine it does not give you a good performance. The problem is, if you have hundreds of questions controlled by runinfo tags, that you end up with most CPU cycles spent on calculating the progress bar on each request. It is precisely for that reason that we implemented the QUESTIONNAIRE_PROGRESS setting (you can learn more about that by looking at the example settings.py).
 
-We managed to keep our rendering time low by doing the progress bar using ajax after a page was rendered. It is only a workaround though. Calculating the progress of a run in a huge questionnaire remains a heavy operation, so for really huge questionnaires one might consider removing the progress bar alltogether. There is still some optimization to be had, but it essentially will remain the slowest part of the questionnaire, because at the end of the day interpreting loads of checks is not something you can do in a fast way, unless your name is PyPy and your programmers are insanly talented.
+We managed to keep our rendering time low by doing the progress bar using AJAX after a page was rendered. It is only a workaround though. Calculating the progress of a run in a huge questionnaire remains a heavy operation, so for really huge questionnaires one might consider removing the progress bar altogether. There is still some optimization to be made, but it essentially will remain the slowest part of the questionnaire, because at the end of the day interpreting loads of checks is not something you can do in a fast way, unless your name is PyPy and your programmers are insanely talented.
 
 ### There are not Enough Tests
 
-There are a couple of tests which do some simple testing, but it's not enough. We failed to add more so far, so we can't shift the blame, but the fact remains still. More tests would mean that more refactoring could be done which would be nice, because there certainly is a need for some refactoring.
+There are a few that do some simple testing, but more are needed. More tests would also mean that more refactoring could be done which would be nice, because there certainly is a need for some refactoring.
 
 ### The Admin Interface is not Good Enough
 
 Django admin is a nice feature to have, but we either don't leverage it well enough, or it is not the right tool for the questionnaire. In any case, if you are expecting your customer to work with the questionnaire's structure you might have to write your own admin interface. The current one is not good enough.
+
 
